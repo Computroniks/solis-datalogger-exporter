@@ -11,7 +11,7 @@ from .Logging import log
 
 
 class Collector(object) :
-    def __init__(self, target: str, uname: str, pwd: str) -> None:
+    def __init__(self, target: str, uname: str, pwd: str, retries: int) -> None:
         """
         __init__ Create instance of datalogger collector
 
@@ -24,13 +24,15 @@ class Collector(object) :
         :type uname: str
         :param pwd: Password to use to login to web interface
         :type pwd: str
+        :param retries: Number of retries to attempt
+        :type retries: int
         """
 
         self._target = target
         self._uname = uname
         self._pwd = pwd
 
-        self._http = urllib3.PoolManager()
+        self._http = urllib3.PoolManager(retries=urllib3.Retry(retries))
 
         self._current_pwr: float = 0
         self._yield_today: float = 0

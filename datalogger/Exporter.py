@@ -21,16 +21,23 @@ class Exporter:
 
         :raises FatalError: An unrecoverable error
         """
-        
+
         load_dotenv()
 
         self._target = os.getenv("DATALOGGER_IP")
         self._uname = os.getenv("DATALOGGER_IP")
         self._pwd = os.getenv("DATALOGGER_PWD")
+
+        try:
+            self._retries = int(os.getenv("DATALOGGER_RETRIES"))
+        except ValueError:
+            log.error("ENVIRONMENT", "Invalid value for DATALOGGER_RETRIES. Expected integer")
+            raise FatalError
+
         try:
             self._port = int(os.getenv("EXPORTER_PORT"))
         except ValueError:
-            log.error("ENVIRONMENT", "Invalid value for EXPORTER_PORT. Expected ingeger")
+            log.error("ENVIRONMENT", "Invalid value for EXPORTER_PORT. Expected integer")
             raise FatalError
 
         REGISTRY.register(Collector(self._target, self._uname, self._pwd))
