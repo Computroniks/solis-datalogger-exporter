@@ -3,8 +3,11 @@
 
 from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily
 import urllib3
+from urllib3.exceptions import MaxRetryError
 from bs4 import BeautifulSoup
 import re
+
+from .Logging import log
 
 
 class Collector(object) :
@@ -29,6 +32,10 @@ class Collector(object) :
 
         self._http = urllib3.PoolManager()
 
+        self._current_pwr: float = 0
+        self._yield_today: float = 0
+        self._yield_total: float = 0
+
     def collect(self):
         """
         collect Collect method for Prometheus exporter
@@ -41,14 +48,21 @@ class Collector(object) :
         :rtype: CounterMetricFamily
         """
 
-        req = self._http.request("GET", f"http://{self._uname}:{self._pwd}@{self._target}/status.html")
-        data = BeautifulSoup(req.data, "html.parser")
-        data = data.find_all("script", type="text/javascript")[1].string
+        try:
+            req = self._http.request("GET", f"http://{self._uname}:{self._pwd}@{self._target}/status.html")
+        except MaxRetryError:
+            # Stick must be offline so no generation. Leave totals same
+            # but set generation to 0
+            log.info("EXPORTER", "Unable to contact logging stick. Assuming no generation.")
+            self._current_pwr = 0
+        else:    
+            data = BeautifulSoup(req.data, "html.parser")
+            data = data.find_all("script", type="text/javascript")[1].string
 
-        current_pwr: float = float(re.compile("var webdata_now_p = (.*?);").findall(str(data))[0][1:-1])
-        yield_today: float = float(re.compile("var webdata_today_e = (.*?);").findall(str(data))[0][1:-1])
-        yield_total: float = float(re.compile("var webdata_total_e = (.*?);").findall(str(data))[0][1:-1])
+            self._current_pwr = float(re.compile("var webdata_now_p = (.*?);").findall(str(data))[0][1:-1])
+            self._yield_today = float(re.compile("var webdata_today_e = (.*?);").findall(str(data))[0][1:-1])
+            self._yield_total = float(re.compile("var webdata_total_e = (.*?);").findall(str(data))[0][1:-1])
 
-        yield GaugeMetricFamily("solar_current_power", "Current power generation from panels", value=current_pwr)
-        yield GaugeMetricFamily("solar_yield_today", "Power generated today", value=yield_today)
-        yield CounterMetricFamily("solar_yield_total", "Total power generated all time", value=yield_total)
+        yield GaugeMetricFamily("solar_current_power", "Current power generation from panels", value=self._current_pwr)
+        yield GaugeMetricFamily("solar_yield_today", "Power generated today", value=self._yield_today)
+        yield CounterMetricFamily("solar_yield_total", "Total power generated all time", value=self._yield_total)
