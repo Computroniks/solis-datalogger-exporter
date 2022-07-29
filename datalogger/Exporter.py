@@ -35,12 +35,18 @@ class Exporter:
             raise FatalError
 
         try:
+            self._timeout = int(os.getenv("DATALOGGER_TIMEOUT"))
+        except ValueError:
+            log.error("ENVIRONMENT", "Invalid value for DATALOGGER_TIMEOUT. Expected integer")
+            raise FatalError
+
+        try:
             self._port = int(os.getenv("EXPORTER_PORT"))
         except ValueError:
             log.error("ENVIRONMENT", "Invalid value for EXPORTER_PORT. Expected integer")
             raise FatalError
 
-        REGISTRY.register(Collector(self._target, self._uname, self._pwd, self._retries))
+        REGISTRY.register(Collector(self._target, self._uname, self._pwd, self._retries, self._timeout))
 
     def run(self) -> int:
         """
