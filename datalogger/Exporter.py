@@ -40,7 +40,7 @@ class Exporter:
             log.error("ENVIRONMENT", "Invalid value for EXPORTER_PORT. Expected integer")
             raise FatalError
 
-        REGISTRY.register(Collector(self._target, self._uname, self._pwd))
+        REGISTRY.register(Collector(self._target, self._uname, self._pwd, self._retries))
 
     def run(self) -> int:
         """
