@@ -27,7 +27,7 @@ class Exporter:
         load_dotenv()
 
         self._target = os.getenv("DATALOGGER_IP")
-        self._uname = os.getenv("DATALOGGER_IP")
+        self._uname = os.getenv("DATALOGGER_UNAME")
         self._pwd = os.getenv("DATALOGGER_PWD")
 
         try:
