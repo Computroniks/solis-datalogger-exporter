@@ -22,6 +22,8 @@ class Exporter:
         :raises FatalError: An unrecoverable error
         """
 
+        log.info("APPLICATION", "Initializing application")
+
         load_dotenv()
 
         self._target = os.getenv("DATALOGGER_IP")
@@ -55,6 +57,8 @@ class Exporter:
         :return: Status code
         :rtype: int
         """
+
+        log.info("APPLICATION", "Starting application")
 
         # Wrap all actions in try except in order to handle all Fatal
         # exceptions and keyboard interupts. In order to pass a fatal
