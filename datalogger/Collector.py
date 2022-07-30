@@ -59,13 +59,17 @@ class Collector(object) :
             # but set generation to 0
             log.info("EXPORTER", "Unable to contact logging stick. Assuming no generation.")
             self._current_pwr = 0
-        else:    
-            data = BeautifulSoup(req.data, "html.parser")
-            data = data.find_all("script", type="text/javascript")[1].string
+        else:
+            if req.status != 200:
+                log.error("EXPORTER", "Failed to log into web interface. Check username and password.")
+                self._current_pwr = 0
+            else:
+                data = BeautifulSoup(req.data, "html.parser")
+                data = data.find_all("script", type="text/javascript")[1].string
 
-            self._current_pwr = float(re.compile("var webdata_now_p = (.*?);").findall(str(data))[0][1:-1])
-            self._yield_today = float(re.compile("var webdata_today_e = (.*?);").findall(str(data))[0][1:-1])
-            self._yield_total = float(re.compile("var webdata_total_e = (.*?);").findall(str(data))[0][1:-1])
+                self._current_pwr = float(re.compile("var webdata_now_p = (.*?);").findall(str(data))[0][1:-1])
+                self._yield_today = float(re.compile("var webdata_today_e = (.*?);").findall(str(data))[0][1:-1])
+                self._yield_total = float(re.compile("var webdata_total_e = (.*?);").findall(str(data))[0][1:-1])
 
         yield GaugeMetricFamily("solar_current_power", "Current power generation from panels", value=self._current_pwr)
         yield GaugeMetricFamily("solar_yield_today", "Power generated today", value=self._yield_today)
